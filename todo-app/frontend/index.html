@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Todo App</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 40px 16px;
+  }
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 28px;
+  }
+  h1 {
+    margin-top: 0;
+    font-size: 22px;
+    color: #1a1a1a;
+  }
+  .api-config {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .api-config input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+  }
+  li span { flex: 1; font-size: 14px; }
+  li.completed span { text-decoration: line-through; color: #999; }
+  li button {
+    background: #ef4444;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  li button:hover { background: #dc2626; }
+  .empty { color: #999; font-size: 13px; padding: 12px 0; }
+  .status { font-size: 12px; color: #999; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📝 Todo App</h1>
+
+  <div class="api-config">
+    <input id="apiUrl" type="text" value="http://localhost:5000" placeholder="Backend API URL" />
+    <button onclick="fetchTodos()">Connect</button>
+  </div>
+
+  <form id="todoForm">
+    <input id="todoInput" type="text" placeholder="Add a task..." autocomplete="off" />
+    <button type="submit">Add</button>
+  </form>
+
+  <ul id="todoList"></ul>
+  <div id="emptyMsg" class="empty" style="display:none;">No tasks yet. Add one above.</div>
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+  function getApiUrl() {
+    return document.getElementById('apiUrl').value.replace(/\/$/, '');
+  }
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.style.color = isError ? '#ef4444' : '#999';
+  }
+
+  async function fetchTodos() {
+    try {
+      setStatus('Loading...');
+      const res = await fetch(`${getApiUrl()}/api/todos`);
+      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      const todos = await res.json();
+      renderTodos(todos);
+      setStatus('Connected to ' + getApiUrl());
+    } catch (err) {
+      setStatus('Could not reach backend at ' + getApiUrl() + ' — ' + err.message, true);
+    }
+  }
+
+  function renderTodos(todos) {
+    const list = document.getElementById('todoList');
+    const emptyMsg = document.getElementById('emptyMsg');
+    list.innerHTML = '';
+
+    if (!todos.length) {
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    emptyMsg.style.display = 'none';
+
+    todos.forEach(todo => {
+      const li = document.createElement('li');
+      if (todo.completed) li.classList.add('completed');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = todo.completed;
+      checkbox.onchange = () => toggleTodo(todo);
+
+      const span = document.createElement('span');
+      span.textContent = todo.text;
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => deleteTodo(todo._id);
+
+      li.appendChild(checkbox);
+      li.appendChild(span);
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
+  }
+
+  async function addTodo(text) {
+    try {
+      await fetch(`${getApiUrl()}/api/todos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      fetchTodos();
+    } catch (err) {
+      setStatus('Failed to add task — ' + err.message, true);
+    }
+  }
+
+  async function toggleTodo(todo) {
+    try {
+      await fetch(`${getApiUrl()}/api/todos/${todo._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !todo.completed })
+      });
+      fetchTodos();
+    } catch (err) {
+      setStatus('Failed to update task — ' + err.message, true);
+    }
+  }
+
+  async function deleteTodo(id) {
+    try {
+      await fetch(`${getApiUrl()}/api/todos/${id}`, { method: 'DELETE' });
+      fetchTodos();
+    } catch (err) {
+      setStatus('Failed to delete task — ' + err.message, true);
+    }
+  }
+
+  document.getElementById('todoForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('todoInput');
+    if (!input.value.trim()) return;
+    addTodo(input.value.trim());
+    input.value = '';
+  });
+
+  // Try connecting on load
+  fetchTodos();
+</script>
+
+</body>
+</html>

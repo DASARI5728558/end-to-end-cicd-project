@@ -1,0 +1,13 @@
+{
+  "name": "todo-backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongoose": "^8.5.0",
+    "cors": "^2.8.5"
+  }
+}
