@@ -30,6 +30,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: mongo-pvc
 spec:
+  storageClassName: ebs-sc
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
