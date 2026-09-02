@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/todo-backend:latest
+          image: 717952410596.dkr.ecr.us-east-1.amazonaws.com/todo_backend:latest
           ports:
             - containerPort: 5000
           envFrom:
